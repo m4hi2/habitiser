@@ -15,6 +15,7 @@ Enough babbling... Let's get into work.
 ## Requirements
 
 Python: 3.13 (because it's latest! You might be able to use lower version, IDK)
+
 Database: Postgresql@14 (because I had it installed.)
 
 ## How to run
