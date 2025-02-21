@@ -1,21 +1,27 @@
+from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect, get_object_or_404
-from django.utils import timezone
-
+from django.utils.timezone import now
+from .models import Habit, HabitSchedule, HabitTracker
 from .forms import HabitForm, HabitScheduleForm
-from .models import Habit, HabitSchedule, HabitProgress
 
 
 @login_required
 def habit_list(request):
-    """Display user's habits and their schedules."""
-    habits = Habit.objects.filter(user=request.user)
-    return render(request, "habits/habit_list.html", {"habits": habits})
+    """Show list of habits scheduled for today."""
+    today = now().strftime("%A")  # Get today's weekday name
+    habits_today = HabitSchedule.objects.filter(day=today, habit__user=request.user)
+
+    for habit_schedule in habits_today:
+        HabitTracker.objects.get_or_create(habit=habit_schedule.habit, date=now().date())
+
+    habit_trackers = HabitTracker.objects.filter(date=now().date(), habit__user=request.user)
+
+    return render(request, "habits/habit_list.html", {"habit_trackers": habit_trackers})
 
 
 @login_required
 def add_habit(request):
-    """Add a new habit."""
+    """Create a new habit."""
     if request.method == "POST":
         form = HabitForm(request.POST)
         if form.is_valid():
@@ -30,27 +36,24 @@ def add_habit(request):
 
 @login_required
 def add_schedule(request):
-    """Assign a day to a habit."""
+    """Add schedule days to a habit."""
     if request.method == "POST":
-        form = HabitScheduleForm(request.POST)
+        form = HabitScheduleForm(request.POST, user=request.user)
         if form.is_valid():
-            form.save()
+            for day in form.cleaned_data["days"]:
+                HabitSchedule.objects.get_or_create(habit=form.cleaned_data["habit"], day=day)
             return redirect("habit_list")
     else:
-        form = HabitScheduleForm()
-    return render(request, "habits/add_schedule.html", {"form": form})
+        form = HabitScheduleForm(user=request.user)
+    return render(request, "habits/add_schedule.html", {"form": form, "habits":
+        Habit.objects.filter(
+        user=request.user)})
 
 
 @login_required
-def mark_progress(request, habit_schedule_id):
+def mark_complete(request, tracker_id):
     """Mark a habit as completed for today."""
-    habit_schedule = get_object_or_404(HabitSchedule, id=habit_schedule_id)
-
-    progress, created = HabitProgress.objects.get_or_create(
-        habit_schedule=habit_schedule, date=timezone.now()
-    )
-
-    progress.completed = not progress.completed
-    progress.save()
-
+    tracker = HabitTracker.objects.get(id=tracker_id, habit__user=request.user)
+    tracker.completed = True
+    tracker.save()
     return redirect("habit_list")

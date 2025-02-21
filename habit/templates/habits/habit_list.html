@@ -1,32 +1,24 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
 {% block content %}
-<h2>Your Habits</h2>
-<a href="{% url 'add_habit' %}">Add Habit</a>
-<a href="{% url 'add_schedule' %}">Add Schedule</a>
-
+<h2>Your Scheduled Habits for Today</h2>
 <ul>
-    {% for habit in habits %}
+    {% for tracker in habit_trackers %}
         <li>
-            <strong>{{ habit.name }}</strong> - {{ habit.description }}
-            <ul>
-                {% for schedule in habit.schedules.all %}
-                    <li>
-                        {{ schedule.day_of_week }} - {{ schedule.goal|default:"No goal set" }}
-                        <form action="{% url 'mark_progress' schedule.id %}" method="post">
-                            {% csrf_token %}
-                            <button type="submit">
-                                {% if schedule.progress.all.0.completed %}
-                                    ✅ Completed
-                                {% else %}
-                                    ❌ Mark as Done
-                                {% endif %}
-                            </button>
-                        </form>
-                    </li>
-                {% endfor %}
-            </ul>
+            {{ tracker.habit.name }} -
+            {% if tracker.completed %}
+                ✅ Completed
+            {% else %}
+                <a href="{% url 'mark_complete' tracker.id %}">
+                    <button>Mark as Done</button>
+                </a>
+            {% endif %}
         </li>
+    {% empty %}
+        <p>No habits scheduled for today.</p>
     {% endfor %}
 </ul>
+
+<a href="{% url 'add_habit' %}"><button>Add Habit</button></a>
+<a href="{% url 'add_schedule' %}"><button>Add Schedule</button></a>
 {% endblock %}

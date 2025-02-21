@@ -1,5 +1,5 @@
 from django import forms
-from .models import Habit, HabitSchedule, HabitProgress
+from .models import Habit, HabitSchedule
 
 
 class HabitForm(forms.ModelForm):
@@ -11,13 +11,20 @@ class HabitForm(forms.ModelForm):
 
 class HabitScheduleForm(forms.ModelForm):
     """Form for assigning days to a habit."""
+    habit = forms.ModelChoiceField(queryset=Habit.objects.none(), label="Select Habit")  # Default to empty queryset
+
+    days = forms.MultipleChoiceField(
+        choices=HabitSchedule.DAYS_OF_WEEK,
+        widget=forms.CheckboxSelectMultiple,
+        label="Select Days",
+    )
+
     class Meta:
         model = HabitSchedule
-        fields = ["habit", "day_of_week", "goal"]
+        fields = ["habit", "days", "goal"]
 
-
-class HabitProgressForm(forms.ModelForm):
-    """Form for marking habit progress."""
-    class Meta:
-        model = HabitProgress
-        fields = ["habit_schedule", "date", "completed"]
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+        if user:
+            self.fields["habit"].queryset = Habit.objects.filter(user=user)

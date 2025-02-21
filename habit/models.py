@@ -13,7 +13,7 @@ class Habit(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.name} ({self.user.email})"
+        return f"{self.name}"
 
 
 class HabitSchedule(models.Model):
@@ -29,24 +29,24 @@ class HabitSchedule(models.Model):
     ]
 
     habit = models.ForeignKey(Habit, on_delete=models.CASCADE, related_name="schedules")
-    day_of_week = models.CharField(max_length=10, choices=DAYS_OF_WEEK)
+    day = models.CharField(max_length=10, choices=DAYS_OF_WEEK)
     goal = models.CharField(max_length=255, blank=True, null=True)  # Example: "Run 2KM"
 
     class Meta:
-        unique_together = ("habit", "day_of_week")  # Prevent duplicate schedules
+        unique_together = ("habit", "day")  # Prevent duplicate schedules
 
     def __str__(self):
-        return f"{self.habit.name} on {self.day_of_week}"
+        return f"{self.habit.name} on {self.day}"
 
 
-class HabitProgress(models.Model):
-    """Tracks when a user completes a habit."""
-    habit_schedule = models.ForeignKey(HabitSchedule, on_delete=models.CASCADE, related_name="progress")
-    date = models.DateTimeField(default=timezone.now)
+class HabitTracker(models.Model):
+    """Tracks habit completion per day."""
+    habit = models.ForeignKey(Habit, on_delete=models.CASCADE, related_name="trackers")
+    date = models.DateField(default=timezone.now)
     completed = models.BooleanField(default=False)
 
     class Meta:
-        unique_together = ("habit_schedule", "date")  # Prevent duplicate entries for the same day
+        unique_together = ("habit", "date")  # Ensures only one entry per habit per day
 
     def __str__(self):
-        return f"{self.habit_schedule.habit.name} on {self.date} - {'Completed' if self.completed else 'Pending'}"
+        return f"{self.habit.name} - {self.date} - {'Completed' if self.completed else 'Pending'}"
