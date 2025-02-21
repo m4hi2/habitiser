@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Your Habits</h2>
+<a href="{% url 'add_habit' %}">Add Habit</a>
+<a href="{% url 'add_schedule' %}">Add Schedule</a>
+
+<ul>
+    {% for habit in habits %}
+        <li>
+            <strong>{{ habit.name }}</strong> - {{ habit.description }}
+            <ul>
+                {% for schedule in habit.schedules.all %}
+                    <li>
+                        {{ schedule.day_of_week }} - {{ schedule.goal|default:"No goal set" }}
+                        <form action="{% url 'mark_progress' schedule.id %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit">
+                                {% if schedule.progress.all.0.completed %}
+                                    ✅ Completed
+                                {% else %}
+                                    ❌ Mark as Done
+                                {% endif %}
+                            </button>
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        </li>
+    {% endfor %}
+</ul>
+{% endblock %}
