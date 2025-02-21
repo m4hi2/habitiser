@@ -12,3 +12,5 @@ env.bak/
 venv.bak/
 
 .ruff_cache/
+
+db.sqlite3
